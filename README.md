@@ -184,8 +184,14 @@ Modifies values in a JSON string.
 
 ```typescript
 interface Patch {
-  path: string;    // Path to the value
-  value: string;   // New value (as a string)
+	/**
+	 * A JSON path where the replacement should occur.
+	 */
+	path: string;
+	/**
+	 * The value to insert at the specified path.
+	 */
+	value: string;
 }
 ```
 
@@ -281,12 +287,7 @@ writeFileSync('package.json', updated);
 The package includes full TypeScript type definitions:
 
 ```typescript
-import { replace } from "jsoncst";
-
-interface Patch {
-  path: string;
-  value: string;
-}
+import { replace, Patch } from "jsoncst";
 
 const source: string = '{"count": 0}';
 const patches: Patch[] = [
