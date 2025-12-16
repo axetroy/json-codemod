@@ -9,12 +9,12 @@ A utility to patch JSON strings while preserving the original formatting, includ
 
 ## ✨ Features
 
-- 🎨 **Format Preservation** - Maintains comments, whitespace, and original formatting
-- 🔄 **Precise Modifications** - Only changes specified values, leaving everything else intact
-- 🚀 **Fast & Lightweight** - Zero dependencies, minimal footprint
-- 📦 **Zero Configuration** - Works out of the box with sensible defaults
-- 💪 **TypeScript Support** - Full type definitions included
-- 🎯 **Flexible Path Syntax** - Supports both dot notation and JSON Pointer
+-   🎨 **Format Preservation** - Maintains comments, whitespace, and original formatting
+-   🔄 **Precise Modifications** - Only changes specified values, leaving everything else intact
+-   🚀 **Fast & Lightweight** - Zero dependencies, minimal footprint
+-   📦 **Zero Configuration** - Works out of the box with sensible defaults
+-   💪 **TypeScript Support** - Full type definitions included
+-   🎯 **Flexible Path Syntax** - Supports both dot notation and JSON Pointer
 
 ## 📦 Installation
 
@@ -40,9 +40,7 @@ import { replace } from "jsoncst";
 const source = '{"name": "Alice", "age": 30}';
 
 // Replace a single value
-const result = replace(source, [
-  { path: "age", value: "31" }
-]);
+const result = replace(source, [{ path: "age", value: "31" }]);
 
 console.log(result);
 // Output: {"name": "Alice", "age": 31}
@@ -58,9 +56,7 @@ const source = `{
   "city": "Beijing"
 }`;
 
-const result = replace(source, [
-  { path: "age", value: "31" }
-]);
+const result = replace(source, [{ path: "age", value: "31" }]);
 
 console.log(result);
 // Output: {
@@ -78,9 +74,7 @@ console.log(result);
 ```js
 const source = '{"user": {"name": "Alice", "profile": {"age": 30}}}';
 
-const result = replace(source, [
-  { path: "user.profile.age", value: "31" }
-]);
+const result = replace(source, [{ path: "user.profile.age", value: "31" }]);
 
 // Result: {"user": {"name": "Alice", "profile": {"age": 31}}}
 ```
@@ -90,9 +84,7 @@ const result = replace(source, [
 ```js
 const source = '{"scores": [85, 90, 95]}';
 
-const result = replace(source, [
-  { path: "scores[1]", value: "92" }
-]);
+const result = replace(source, [{ path: "scores[1]", value: "92" }]);
 
 // Result: {"scores": [85, 92, 95]}
 ```
@@ -102,9 +94,7 @@ const result = replace(source, [
 ```js
 const source = '{"data": {"items": [1, 2, 3]}}';
 
-const result = replace(source, [
-  { path: "/data/items/2", value: "99" }
-]);
+const result = replace(source, [{ path: "/data/items/2", value: "99" }]);
 
 // Result: {"data": {"items": [1, 2, 99]}}
 ```
@@ -115,9 +105,9 @@ const result = replace(source, [
 const source = '{"x": 1, "y": 2, "arr": [3, 4]}';
 
 const result = replace(source, [
-  { path: "x", value: "10" },
-  { path: "y", value: "20" },
-  { path: "arr[0]", value: "30" }
+	{ path: "x", value: "10" },
+	{ path: "y", value: "20" },
+	{ path: "arr[0]", value: "30" },
 ]);
 
 // Result: {"x": 10, "y": 20, "arr": [30, 4]}
@@ -128,9 +118,7 @@ const result = replace(source, [
 ```js
 const source = '{"message": "Hello"}';
 
-const result = replace(source, [
-  { path: "message", value: '"World"' }
-]);
+const result = replace(source, [{ path: "message", value: '"World"' }]);
 
 // Result: {"message": "World"}
 // Note: value needs to include quotes for strings
@@ -142,14 +130,10 @@ const result = replace(source, [
 const source = '{"config": {"timeout": 3000}}';
 
 // Replace with an object
-const result1 = replace(source, [
-  { path: "config", value: '{"timeout": 5000, "retry": 3}' }
-]);
+const result1 = replace(source, [{ path: "config", value: '{"timeout": 5000, "retry": 3}' }]);
 
 // Replace with an array
-const result2 = replace(source, [
-  { path: "config", value: '[1, 2, 3]' }
-]);
+const result2 = replace(source, [{ path: "config", value: "[1, 2, 3]" }]);
 ```
 
 ### Handling Special Characters in Keys
@@ -162,9 +146,7 @@ const source = '{"a/b": {"c~d": 5}}';
 // In JSON Pointer:
 // ~0 represents ~
 // ~1 represents /
-const result = replace(source, [
-  { path: "/a~1b/c~0d", value: "42" }
-]);
+const result = replace(source, [{ path: "/a~1b/c~0d", value: "42" }]);
 
 // Result: {"a/b": {"c~d": 42}}
 ```
@@ -177,8 +159,8 @@ Modifies values in a JSON string.
 
 #### Parameters
 
-- **sourceText** (`string`): The original JSON string
-- **patches** (`Array<Patch>`): Array of modifications to apply
+-   **sourceText** (`string`): The original JSON string
+-   **patches** (`Array<Patch>`): Array of modifications to apply
 
 #### Patch Object
 
@@ -200,29 +182,30 @@ interface Patch {
 Two path syntaxes are supported:
 
 1. **Dot Notation** (recommended for simple cases)
-   - Object properties: `"user.name"`
-   - Array indices: `"items[0]"`
-   - Nested paths: `"data.users[0].name"`
+
+    - Object properties: `"user.name"`
+    - Array indices: `"items[0]"`
+    - Nested paths: `"data.users[0].name"`
 
 2. **JSON Pointer** (RFC 6901)
-   - Format: starts with `/`
-   - Object properties: `"/user/name"`
-   - Array indices: `"/items/0"`
-   - Escape sequences:
-     - `~0` represents `~`
-     - `~1` represents `/`
-   - Example: `"/a~1b/c~0d"` refers to the `c~d` property of the `a/b` object
+    - Format: starts with `/`
+    - Object properties: `"/user/name"`
+    - Array indices: `"/items/0"`
+    - Escape sequences:
+        - `~0` represents `~`
+        - `~1` represents `/`
+    - Example: `"/a~1b/c~0d"` refers to the `c~d` property of the `a/b` object
 
 #### Value Format
 
 The `value` parameter must be a string representation of a JSON value:
 
-- Numbers: `"42"`, `"3.14"`
-- Strings: `'"hello"'` (must include quotes)
-- Booleans: `"true"`, `"false"`
-- null: `"null"`
-- Objects: `'{"key": "value"}'`
-- Arrays: `'[1, 2, 3]'`
+-   Numbers: `"42"`, `"3.14"`
+-   Strings: `'"hello"'` (must include quotes)
+-   Booleans: `"true"`, `"false"`
+-   null: `"null"`
+-   Objects: `'{"key": "value"}'`
+-   Arrays: `'[1, 2, 3]'`
 
 #### Return Value
 
@@ -230,8 +213,8 @@ Returns the modified JSON string.
 
 #### Error Handling
 
-- If a path doesn't exist, that modification is silently ignored without throwing an error
-- If multiple modifications have conflicting (overlapping) paths, an error is thrown
+-   If a path doesn't exist, that modification is silently ignored without throwing an error
+-   If multiple modifications have conflicting (overlapping) paths, an error is thrown
 
 ## 🎯 Use Cases
 
@@ -240,20 +223,20 @@ Returns the modified JSON string.
 Perfect for modifying configuration files with comments (like `tsconfig.json`, `package.json`, etc.):
 
 ```js
-import { readFileSync, writeFileSync } from 'fs';
-import { replace } from 'jsoncst';
+import { readFileSync, writeFileSync } from "fs";
+import { replace } from "jsoncst";
 
 // Read configuration file
-const config = readFileSync('tsconfig.json', 'utf-8');
+const config = readFileSync("tsconfig.json", "utf-8");
 
 // Modify configuration
 const updated = replace(config, [
-  { path: "compilerOptions.target", value: '"ES2020"' },
-  { path: "compilerOptions.strict", value: "true" }
+	{ path: "compilerOptions.target", value: '"ES2020"' },
+	{ path: "compilerOptions.strict", value: "true" },
 ]);
 
 // Save configuration (preserving original format and comments)
-writeFileSync('tsconfig.json', updated);
+writeFileSync("tsconfig.json", updated);
 ```
 
 ### JSON Data Transformation
@@ -263,8 +246,8 @@ writeFileSync('tsconfig.json', updated);
 const data = fetchDataAsString();
 
 const updated = replace(data, [
-  { path: "metadata.version", value: '"2.0"' },
-  { path: "metadata.updatedAt", value: `"${new Date().toISOString()}"` }
+	{ path: "metadata.version", value: '"2.0"' },
+	{ path: "metadata.updatedAt", value: `"${new Date().toISOString()}"` },
 ]);
 ```
 
@@ -272,14 +255,12 @@ const updated = replace(data, [
 
 ```js
 // Automated version number updates
-const pkg = readFileSync('package.json', 'utf-8');
-const version = '1.2.3';
+const pkg = readFileSync("package.json", "utf-8");
+const version = "1.2.3";
 
-const updated = replace(pkg, [
-  { path: "version", value: `"${version}"` }
-]);
+const updated = replace(pkg, [{ path: "version", value: `"${version}"` }]);
 
-writeFileSync('package.json', updated);
+writeFileSync("package.json", updated);
 ```
 
 ## 💻 TypeScript Support
@@ -290,9 +271,7 @@ The package includes full TypeScript type definitions:
 import { replace, Patch } from "jsoncst";
 
 const source: string = '{"count": 0}';
-const patches: Patch[] = [
-  { path: "count", value: "1" }
-];
+const patches: Patch[] = [{ path: "count", value: "1" }];
 
 const result: string = replace(source, patches);
 ```
@@ -332,12 +311,14 @@ A: If a path doesn't exist, that modification is automatically ignored without t
 ### Q: What JSON extensions are supported?
 
 A: Supported:
-- ✅ Single-line comments `//`
-- ✅ Block comments `/* */`
-- ✅ All standard JSON syntax
+
+-   ✅ Single-line comments `//`
+-   ✅ Block comments `/* */`
+-   ✅ All standard JSON syntax
 
 Not supported:
-- ❌ Other JSON5 features (like unquoted keys, trailing commas, etc.)
+
+-   ❌ Other JSON5 features (like unquoted keys, trailing commas, etc.)
 
 ### Q: How is the performance?
 
@@ -359,9 +340,9 @@ This project is licensed under the [Anti 996 License](LICENSE).
 
 ## 🔗 Links
 
-- [npm package](https://www.npmjs.com/package/jsoncst)
-- [GitHub repository](https://github.com/axetroy/jsoncst)
-- [Issue tracker](https://github.com/axetroy/jsoncst/issues)
+-   [npm package](https://www.npmjs.com/package/jsoncst)
+-   [GitHub repository](https://github.com/axetroy/jsoncst)
+-   [Issue tracker](https://github.com/axetroy/jsoncst/issues)
 
 ## 🌟 Star History
 
