@@ -1,6 +1,6 @@
 {
     "name": "jsoncst",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "private": false,
     "description": "A utility to patch the JSON string and preserve the original formatting, including comments and whitespace.",
     "sideEffects": false,
@@ -42,12 +42,12 @@
     },
     "keywords": [
         "json",
-		"jsoncst",
-		"json patch",
-		"json formatter",
-		"json with comments",
-		"jsonc",
-		"json5"
+        "jsoncst",
+        "json patch",
+        "json formatter",
+        "json with comments",
+        "jsonc",
+        "json5"
     ],
     "homepage": "https://github.com/axetroy/jsoncst#readme",
     "bugs": {
