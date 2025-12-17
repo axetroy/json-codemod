@@ -1,48 +1,52 @@
-import { extractString } from "./helper.js";
-
-export function resolvePath(root, path, sourceText) {
-	const parts = Array.isArray(path) ? path : parsePath(path);
-	let node = root;
-
-	for (const part of parts) {
-		if (!node) return null;
-
-		if (node.type === "Object") {
-			node = resolveObjectProperty(node, part, sourceText);
-		} else if (node.type === "Array") {
-			node = resolveArrayElement(node, part);
-		} else {
-			return null;
+function unescapeString(str) {
+	return str.replace(/\\(.)/g, (_, ch) => {
+		switch (ch) {
+			case '"':
+				return '"';
+			case "\\":
+				return "\\";
+			case "/":
+				return "/";
+			case "b":
+				return "\b";
+			case "f":
+				return "\f";
+			case "n":
+				return "\n";
+			case "r":
+				return "\r";
+			case "t":
+				return "\t";
+			default:
+				return ch; // \uXXXX 可后续增强
 		}
-	}
-
-	return node;
+	});
 }
 
-function resolveObjectProperty(objectNode, key, sourceText) {
-	if (typeof key !== "string") return null;
-
-	for (const prop of objectNode.properties) {
-		const name = extractString(prop.key, sourceText);
-		if (name === key) {
-			return prop.value;
-		}
-	}
-	return null;
+export function extractString(stringNode, sourceText) {
+	// sourceText 是完整 JSON 文本
+	// stringNode.start / end 覆盖包含引号
+	const raw = sourceText.slice(stringNode.start + 1, stringNode.end - 1);
+	return unescapeString(raw);
 }
 
-function resolveArrayElement(arrayNode, index) {
-	if (typeof index !== "number") return null;
-	return arrayNode.elements[index] || null;
-}
-
-function parsePath(path) {
+/**
+ *
+ * @param {string} path
+ * @returns
+ */
+export function parsePath(path) {
 	if (path.startsWith("/")) {
 		return parseJSONPointer(path);
 	}
 	return parseDotPath(path);
 }
 
+/**
+ *
+ * @param {string} path
+ * @returns
+ */
 function parseDotPath(path) {
 	const result = [];
 	let i = 0;
@@ -79,6 +83,11 @@ function parseDotPath(path) {
 	return result;
 }
 
+/**
+ *
+ * @param {string} pointer
+ * @returns
+ */
 function parseJSONPointer(pointer) {
 	if (pointer === "") return [];
 
