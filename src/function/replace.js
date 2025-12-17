@@ -2,12 +2,14 @@ import { Tokenizer } from "../Tokenizer.js";
 import { CSTBuilder } from "../CSTBuilder.js";
 import { resolvePath } from "../PathResolver.js";
 
-export function replace(sourceText, patches) {
-	const tokenizer = new Tokenizer(sourceText);
-	const tokens = tokenizer.tokenize();
+export function replace(sourceText, patches, root) {
+	if (!root) {
+		const tokenizer = new Tokenizer(sourceText);
+		const tokens = tokenizer.tokenize();
 
-	const builder = new CSTBuilder(tokens);
-	const root = builder.build();
+		const builder = new CSTBuilder(tokens);
+		root = builder.build();
+	}
 
 	// 倒叙替换
 	const reverseNodes = patches

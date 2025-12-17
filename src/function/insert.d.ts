@@ -1,3 +1,5 @@
+import { Node } from "../CSTBuilder.js";
+
 export interface InsertPatchArray {
 	/**
 	 * A JSON path where the insertion should occur.
@@ -34,4 +36,10 @@ export interface InsertPatchObject {
 
 export type InsertPatch = InsertPatchArray | InsertPatchObject;
 
-export declare function insert(sourceText: string, patches: Array<InsertPatch>): string;
+/**
+ * Inserts values into a JSON structure at specified paths.
+ * @param sourceText - The original JSON text.
+ * @param patches - An array of insertion patches.
+ * @param root - Optional CST root node to avoid re-parsing.
+ */
+export declare function insert(sourceText: string, patches: Array<InsertPatch>, root?: Node): string;

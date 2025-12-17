@@ -3,12 +3,14 @@ import { CSTBuilder } from "../CSTBuilder.js";
 import { resolvePath } from "../PathResolver.js";
 import { extractString } from "../helper.js";
 
-export function insert(sourceText, patches) {
-	const tokenizer = new Tokenizer(sourceText);
-	const tokens = tokenizer.tokenize();
+export function insert(sourceText, patches, root) {
+	if (!root) {
+		const tokenizer = new Tokenizer(sourceText);
+		const tokens = tokenizer.tokenize();
 
-	const builder = new CSTBuilder(tokens);
-	const root = builder.build();
+		const builder = new CSTBuilder(tokens);
+		root = builder.build();
+	}
 
 	// 倒叙插入
 	const reverseNodes = patches

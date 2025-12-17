@@ -8,5 +8,9 @@ const jsoncst = {
 	insert: insert,
 };
 
+function patch(sourceText, patches) {
+	// TODO: 实现补丁功能
+}
+
 export { replace, remove, insert };
 export default jsoncst;
