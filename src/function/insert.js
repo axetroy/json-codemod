@@ -3,6 +3,40 @@ import { CSTBuilder } from "../CSTBuilder.js";
 import { resolvePath } from "../PathResolver.js";
 import { extractString } from "../helper.js";
 
+/**
+ * Inserts new properties into objects or elements into arrays in a JSON string while preserving formatting, comments, and whitespace.
+ * 
+ * @param {string} sourceText - The original JSON string to modify
+ * @param {Array<{path: string, key?: string, value: string, position?: number}>} patches - Array of insertion operations to apply
+ * @param {string} patches[].path - JSON path where the insertion should occur (supports dot notation like "a.b" or JSON Pointer like "/a/b")
+ * @param {string} [patches[].key] - For object insertion: the key name for the new property (required when inserting into objects)
+ * @param {string} patches[].value - The value to insert (must be a valid JSON value as a string)
+ * @param {number} [patches[].position] - For array insertion: the index where to insert the value (0-based, defaults to appending at the end)
+ * @returns {string} The modified JSON string with new values inserted
+ * @throws {Error} If inserting into an object without providing a key
+ * @throws {Error} If the key already exists in the object
+ * @throws {Error} If the position is out of bounds for array insertion
+ * 
+ * @example
+ * // Insert property into object
+ * insert('{"name": "Alice"}', [{ path: "", key: "age", value: "30" }]);
+ * // Returns: '{"name": "Alice", "age": 30}'
+ * 
+ * @example
+ * // Insert element at array position
+ * insert('{"items": [1, 3]}', [{ path: "items", position: 1, value: "2" }]);
+ * // Returns: '{"items": [1, 2, 3]}'
+ * 
+ * @example
+ * // Append to array (position omitted)
+ * insert('{"items": [1, 2]}', [{ path: "items", value: "3" }]);
+ * // Returns: '{"items": [1, 2, 3]}'
+ * 
+ * @example
+ * // Insert nested property
+ * insert('{"user": {"name": "Alice"}}', [{ path: "user", key: "email", value: '"alice@example.com"' }]);
+ * // Returns: '{"user": {"name": "Alice", "email": "alice@example.com"}}'
+ */
 export function insert(sourceText, patches) {
 	const tokenizer = new Tokenizer(sourceText);
 	const tokens = tokenizer.tokenize();

@@ -3,6 +3,34 @@ import { CSTBuilder } from "../CSTBuilder.js";
 import { resolvePath } from "../PathResolver.js";
 import { parsePath, extractString } from "../helper.js";
 
+/**
+ * Removes properties from objects or elements from arrays in a JSON string while preserving formatting, comments, and whitespace.
+ * 
+ * @param {string} sourceText - The original JSON string to modify
+ * @param {Array<{path: string}>} patches - Array of deletion operations to apply
+ * @param {string} patches[].path - JSON path to the property or element to delete (supports dot notation like "a.b.c" or JSON Pointer like "/a/b/c")
+ * @returns {string} The modified JSON string with specified paths removed
+ * 
+ * @example
+ * // Remove an object property
+ * remove('{"a": 1, "b": 2}', [{ path: "b" }]);
+ * // Returns: '{"a": 1}'
+ * 
+ * @example
+ * // Remove an array element
+ * remove('{"items": [1, 2, 3]}', [{ path: "items[1]" }]);
+ * // Returns: '{"items": [1, 3]}'
+ * 
+ * @example
+ * // Remove nested property
+ * remove('{"user": {"name": "Alice", "age": 30}}', [{ path: "user.age" }]);
+ * // Returns: '{"user": {"name": "Alice"}}'
+ * 
+ * @example
+ * // Batch deletions
+ * remove('{"a": 1, "b": 2, "c": 3}', [{ path: "a" }, { path: "c" }]);
+ * // Returns: '{"b": 2}'
+ */
 export function remove(sourceText, patches) {
 	const tokenizer = new Tokenizer(sourceText);
 	const tokens = tokenizer.tokenize();
