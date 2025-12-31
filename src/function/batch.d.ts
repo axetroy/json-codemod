@@ -32,30 +32,21 @@ export interface ExplicitInsertPatch {
 
 /**
  * Union type for all batch patch types.
- * Supports both implicit (inferred from properties) and explicit (with operation field) patch types.
+ * All patches MUST have an explicit operation field.
+ * 
+ * BREAKING CHANGE: The operation field is now required.
+ * Implicit operation detection has been removed.
  */
-export type BatchPatch =
-	| ReplacePatch
-	| DeletePatch
-	| InsertPatch
-	| ExplicitReplacePatch
-	| ExplicitDeletePatch
-	| ExplicitInsertPatch;
+export type BatchPatch = ExplicitReplacePatch | ExplicitDeletePatch | ExplicitInsertPatch;
 
 /**
  * Applies a batch of patches to the source text.
  * @param sourceText - The original source text.
- * @param patches - An array of patches to apply. Can use either implicit or explicit operation types.
+ * @param patches - An array of patches to apply. Each patch MUST include an explicit operation field.
  * @returns The modified source text after applying all patches.
+ * @throws {Error} If any patch is missing the operation field or has an invalid operation type.
  * @example
- * // Implicit operation detection (backward compatible)
- * batch(source, [
- *   { path: "a", value: "1" },  // replace
- *   { path: "b" },  // delete
- *   { path: "arr", position: 0, value: "2" }  // insert
- * ]);
- * 
- * // Explicit operation type (recommended for clarity)
+ * // All patches require explicit operation type
  * batch(source, [
  *   { operation: "replace", path: "a", value: "1" },
  *   { operation: "delete", path: "b" },

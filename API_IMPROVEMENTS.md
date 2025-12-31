@@ -1,5 +1,11 @@
 # API Improvements (API 改进说明)
 
+## ⚠️ Breaking Changes in v2.0
+
+**Version 2.0 introduces breaking changes.** The `batch()` function now requires explicit operation types.
+
+See [MIGRATION.md](./MIGRATION.md) for detailed migration instructions.
+
 ## Overview (概述)
 
 This document describes the API improvements made to json-codemod to address several unreasonable aspects of the original API design.
@@ -77,23 +83,23 @@ const result2 = replace(source, [
 ]);
 ```
 
-### 2. Explicit Operation Types (显式操作类型)
+### 2. Explicit Operation Types (显式操作类型) - ⚠️ BREAKING CHANGE
 
-Added support for explicit `operation` field in batch patches for clarity:
+**Version 2.0 Change:** The `operation` field is now **required** in all batch patches.
 
 ```javascript
 import { batch } from 'json-codemod';
 
 const source = '{"a": 1, "b": 2, "items": [1, 2]}';
 
-// Before (implicit detection)
+// ❌ v1.x - implicit detection (NO LONGER SUPPORTED)
 const result1 = batch(source, [
-  { path: "a", value: "10" },              // What operation is this?
-  { path: "b" },                            // What operation is this?
-  { path: "items", position: 2, value: "3" }  // What operation is this?
+  { path: "a", value: "10" },              // Was implicitly detected as replace
+  { path: "b" },                            // Was implicitly detected as delete
+  { path: "items", position: 2, value: "3" }  // Was implicitly detected as insert
 ]);
 
-// After (explicit - recommended for clarity)
+// ✅ v2.x - explicit operation types (REQUIRED)
 const result2 = batch(source, [
   { operation: "replace", path: "a", value: "10" },
   { operation: "delete", path: "b" },
@@ -109,8 +115,9 @@ const result3 = batch(source, [
 **Benefits:**
 - ✅ Code is self-documenting
 - ✅ Easier to understand intent at a glance
-- ✅ Less mental overhead
-- ✅ Backward compatible (implicit detection still works)
+- ✅ No mental overhead remembering implicit rules
+- ✅ Prevents ambiguity and bugs
+- ✅ Better error messages
 
 ### 3. Enhanced TypeScript Support (增强的 TypeScript 支持)
 
@@ -153,55 +160,33 @@ const result = replace(source, [
 
 ## Migration Guide (迁移指南)
 
-### For Existing Code (现有代码)
+### ⚠️ Breaking Changes in v2.0
 
-**Good News:** All existing code continues to work without changes! The improvements are additive and fully backward compatible.
+**Version 2.0 requires explicit operation types in the `batch()` function.**
+
+See the dedicated [MIGRATION.md](./MIGRATION.md) file for complete migration instructions.
+
+#### Quick Migration Summary
 
 ```javascript
-// This still works exactly as before
+// ❌ v1.x - NO LONGER WORKS
 batch(source, [
   { path: "a", value: "10" },
   { path: "b" },
   { path: "items", position: 2, value: "3" }
 ]);
-```
 
-### Recommended Updates (建议更新)
-
-For new code or when refactoring, consider these improvements:
-
-#### 1. Use Value Helpers
-
-```javascript
-// Old way (still works)
-replace(source, [
-  { path: "name", value: '"Alice"' },
-  { path: "age", value: "30" }
-]);
-
-// New way (recommended)
-import { replace, formatValue } from 'json-codemod';
-replace(source, [
-  { path: "name", value: formatValue("Alice") },
-  { path: "age", value: formatValue(30) }
-]);
-```
-
-#### 2. Use Explicit Operations in Batch
-
-```javascript
-// Old way (still works but less clear)
+// ✅ v2.x - REQUIRED
 batch(source, [
-  { path: "a", value: "1" },
-  { path: "b" }
-]);
-
-// New way (recommended for clarity)
-batch(source, [
-  { operation: "replace", path: "a", value: "1" },
-  { operation: "delete", path: "b" }
+  { operation: "replace", path: "a", value: "10" },
+  { operation: "delete", path: "b" },
+  { operation: "insert", path: "items", position: 2, value: "3" }
 ]);
 ```
+
+### Other Functions (Unchanged)
+
+The `replace()`, `remove()`, and `insert()` functions remain unchanged and fully backward compatible.
 
 ## Examples (示例)
 

@@ -33,7 +33,7 @@ pnpm add json-codemod
 
 ## 🚀 Quick Start
 
-### Using Value Helpers (New! Recommended)
+### Using Value Helpers (Recommended)
 
 Value helpers make it easier to format values correctly without manual quote handling:
 
@@ -53,41 +53,20 @@ console.log(result);
 // Output: {"name": "Bob", "age": 31, "active": true}
 ```
 
-See [API_IMPROVEMENTS.md](./API_IMPROVEMENTS.md) for more details on the new features.
+### Using Batch with Explicit Operations (Required)
 
-### Using Batch with Explicit Operations (New! Recommended)
-
-For better code clarity, you can now use explicit operation types:
+**IMPORTANT:** All batch operations now require an explicit `operation` field.
 
 ```js
 import { batch, formatValue } from "json-codemod";
 
 const source = '{"name": "Alice", "age": 30, "items": [1, 2]}';
 
-// Use explicit operation types for self-documenting code
+// All patches MUST specify the operation type
 const result = batch(source, [
 	{ operation: "replace", path: "age", value: formatValue(31) },
 	{ operation: "delete", path: "name" },
 	{ operation: "insert", path: "items", position: 2, value: formatValue(3) },
-]);
-
-console.log(result);
-// Output: {"age": 31, "items": [1, 2, 3]}
-```
-
-### Using Patch (Multiple Operations)
-
-```js
-import { batch } from "json-codemod";
-
-const source = '{"name": "Alice", "age": 30, "items": [1, 2]}';
-
-// Apply multiple operations at once (most efficient)
-// Implicit operation detection (backward compatible)
-const result = batch(source, [
-	{ path: "age", value: "31" }, // Replace
-	{ path: "name" }, // Delete (no value means delete)
-	{ path: "items", position: 2, value: "3" }, // Insert
 ]);
 
 console.log(result);
@@ -364,9 +343,9 @@ Applies multiple operations (replace, delete, insert) in a single call. This is 
 
 #### Batch Types
 
-The function supports both **implicit** (backward compatible) and **explicit** operation types:
+**⚠️ BREAKING CHANGE:** All patches now require an explicit `operation` field.
 
-**Explicit Operation Types** (⭐ Recommended for clarity):
+**Explicit Operation Types** (Required):
 
 ```typescript
 // Replace: explicit operation type
@@ -379,29 +358,17 @@ The function supports both **implicit** (backward compatible) and **explicit** o
 { operation: "insert", path: string, value: string, key?: string, position?: number }
 ```
 
-**Implicit Operation Detection** (backward compatible):
-
-```typescript
-// Replace: has value but no key/position
-{ path: string, value: string }
-
-// Delete: no value, key, or position
-{ path: string }
-
-// Insert (object): has key and value
-{ path: string, key: string, value: string }
-
-// Insert (array): has position and value
-{ path: string, position: number, value: string }
-```
-
 #### Return Value
 
 Returns the modified JSON string with all patches applied.
 
-#### Example
+#### Error Handling
 
-**With Explicit Operations** (Recommended):
+-   Throws an error if any patch is missing the `operation` field
+-   Throws an error if an invalid operation type is specified
+-   Throws an error if a replace/insert operation is missing the required `value` field
+
+#### Example
 
 ```js
 import { batch, formatValue } from "json-codemod";
@@ -410,17 +377,6 @@ const result = batch('{"a": 1, "b": 2, "items": [1, 2]}', [
 	{ operation: "replace", path: "a", value: formatValue(10) },
 	{ operation: "delete", path: "b" },
 	{ operation: "insert", path: "items", position: 2, value: formatValue(3) },
-]);
-// Returns: '{"a": 10, "items": [1, 2, 3]}'
-```
-
-**With Implicit Detection** (Backward Compatible):
-
-```js
-const result = batch('{"a": 1, "b": 2, "items": [1, 2]}', [
-	{ path: "a", value: "10" }, // Replace
-	{ path: "b" }, // Delete
-	{ path: "items", position: 2, value: "3" }, // Insert
 ]);
 // Returns: '{"a": 10, "items": [1, 2, 3]}'
 ```
@@ -761,25 +717,29 @@ replace(source, [
 
 However, manual formatting is still useful when you need precise control over the output format, such as custom whitespace or multi-line formatting.
 
-### Q: Should I use explicit or implicit operation types in batch?
+### Q: Why are explicit operation types now required in batch?
 
-A: **Explicit operation types are recommended** for better code clarity and maintainability:
+A: **⚠️ BREAKING CHANGE** - Explicit operation types are now required to eliminate ambiguity and make code more maintainable:
 
 ```js
-// ✅ Explicit (recommended - self-documenting)
+// ✅ Now required - self-documenting and clear
 batch(source, [
 	{ operation: "replace", path: "a", value: "1" },
 	{ operation: "delete", path: "b" },
 ]);
 
-// ⚠️ Implicit (works but less clear)
+// ❌ No longer supported - was ambiguous
 batch(source, [
-	{ path: "a", value: "1" },
-	{ path: "b" },
+	{ path: "a", value: "1" },  // What operation is this?
+	{ path: "b" },               // What operation is this?
 ]);
 ```
 
-Both work identically, but explicit types make the intent clear at a glance.
+**Benefits:**
+- Code is self-documenting
+- No mental overhead to remember implicit rules
+- Easier to review and maintain
+- Prevents confusion and bugs
 
 ### Q: Why does the value parameter need to be a string?
 

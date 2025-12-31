@@ -17,38 +17,34 @@ export function batch(sourceText, patches) {
 	const insertPatches = [];
 
 	for (const p of patches) {
-		// Support explicit operation type for clarity
-		if (p.operation) {
-			switch (p.operation) {
-				case "replace":
-					replacePatches.push({ path: p.path, value: p.value });
-					break;
-				case "delete":
-				case "remove":
-					deletePatches.push({ path: p.path });
-					break;
-				case "insert":
-					insertPatches.push(p);
-					break;
-				default:
-					// Invalid operation - skip it
-					continue;
-			}
-		} else {
-			// Determine patch type based on properties (backward compatibility)
-			if (p.value !== undefined && p.key === undefined && p.position === undefined) {
-				// Has value but no key/position -> replace operation
+		// Require explicit operation type - no implicit detection
+		if (!p.operation) {
+			throw new Error(
+				`Operation type is required. Please specify operation: "replace", "delete", or "insert" for patch at path "${p.path}"`
+			);
+		}
+
+		switch (p.operation) {
+			case "replace":
+				if (p.value === undefined) {
+					throw new Error(`Replace operation requires 'value' property for patch at path "${p.path}"`);
+				}
 				replacePatches.push({ path: p.path, value: p.value });
-			} else if (p.value === undefined && p.key === undefined && p.position === undefined) {
-				// No value, key, or position -> delete operation
+				break;
+			case "delete":
+			case "remove":
 				deletePatches.push({ path: p.path });
-			} else if ((p.key !== undefined || p.position !== undefined) && p.value !== undefined) {
-				// Has key or position with value -> insert operation
+				break;
+			case "insert":
+				if (p.value === undefined) {
+					throw new Error(`Insert operation requires 'value' property for patch at path "${p.path}"`);
+				}
 				insertPatches.push(p);
-			} else {
-				// Invalid patch - skip it
-				continue;
-			}
+				break;
+			default:
+				throw new Error(
+					`Invalid operation type "${p.operation}". Must be "replace", "delete", "remove", or "insert" for patch at path "${p.path}"`
+				);
 		}
 	}
 

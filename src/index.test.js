@@ -365,9 +365,9 @@ describe("Batch Operation Tests", () => {
 		const source = '{"a": 1, "b": 2, "c": [1, 2, 3]}';
 
 		const result = batch(source, [
-			{ path: "a", value: "10" }, // Replace
-			{ path: "b" }, // Delete
-			{ path: "c", position: 1, value: "99" }, // Insert
+			{ operation: "replace", path: "a", value: "10" },
+			{ operation: "delete", path: "b" },
+			{ operation: "insert", path: "c", position: 1, value: "99" },
 		]);
 
 		assert.equal(result, '{"a": 10, "c": [1, 99, 2, 3]}');
@@ -377,8 +377,8 @@ describe("Batch Operation Tests", () => {
 		const source = '{"x": 1, "y": 2}';
 
 		const result = batch(source, [
-			{ path: "x", value: "100" },
-			{ path: "y", value: "200" },
+			{ operation: "replace", path: "x", value: "100" },
+			{ operation: "replace", path: "y", value: "200" },
 		]);
 
 		assert.equal(result, '{"x": 100, "y": 200}');
@@ -387,7 +387,7 @@ describe("Batch Operation Tests", () => {
 	test("batch with only deletions", () => {
 		const source = '{"a": 1, "b": 2, "c": 3}';
 
-		const result = batch(source, [{ path: "b" }]);
+		const result = batch(source, [{ operation: "delete", path: "b" }]);
 
 		assert.equal(result, '{"a": 1, "c": 3}');
 	});
@@ -395,7 +395,7 @@ describe("Batch Operation Tests", () => {
 	test("batch with only insertions", () => {
 		const source = '{"items": [1, 3]}';
 
-		const result = batch(source, [{ path: "items", position: 1, value: "2" }]);
+		const result = batch(source, [{ operation: "insert", path: "items", position: 1, value: "2" }]);
 
 		assert.equal(result, '{"items": [1, 2, 3]}');
 	});
@@ -404,9 +404,9 @@ describe("Batch Operation Tests", () => {
 		const source = '{"user": {"name": "Alice", "age": 30}}';
 
 		const result = batch(source, [
-			{ path: "user.name", value: '"Bob"' }, // Replace
-			{ path: "user.age" }, // Delete
-			{ path: "user", key: "email", value: '"bob@example.com"' }, // Insert
+			{ operation: "replace", path: "user.name", value: '"Bob"' },
+			{ operation: "delete", path: "user.age" },
+			{ operation: "insert", path: "user", key: "email", value: '"bob@example.com"' },
 		]);
 
 		assert.equal(result, '{"user": {"name": "Bob", "email": "bob@example.com"}}');
@@ -416,8 +416,8 @@ describe("Batch Operation Tests", () => {
 		const source = '{"data": {"items": [1, 2, 3], "count": 3}}';
 
 		const result = batch(source, [
-			{ path: "data.count", value: "4" }, // Replace
-			{ path: "data.items", position: 3, value: "4" }, // Insert
+			{ operation: "replace", path: "data.count", value: "4" },
+			{ operation: "insert", path: "data.items", position: 3, value: "4" },
 		]);
 
 		assert.equal(result, '{"data": {"items": [1, 2, 3, 4], "count": 4}}');
@@ -439,8 +439,8 @@ describe("Batch Operation Tests", () => {
 }`;
 
 		const result = batch(source, [
-			{ path: "age", value: "31" },
-			{ path: "items", position: 2, value: "3" },
+			{ operation: "replace", path: "age", value: "31" },
+			{ operation: "insert", path: "items", position: 2, value: "3" },
 		]);
 
 		const expected = `{
@@ -460,8 +460,8 @@ describe("Batch Operation Tests", () => {
 }`;
 
 		const result = batch(source, [
-			{ path: "age", value: "31" },
-			{ path: "", key: "email", value: '"alice@example.com"' },
+			{ operation: "replace", path: "age", value: "31" },
+			{ operation: "insert", path: "", key: "email", value: '"alice@example.com"' },
 		]);
 
 		assert(result.includes("// User info"));
@@ -489,16 +489,40 @@ describe("Batch Operation Tests", () => {
 		assert.equal(result, '{"a": 1}');
 	});
 
-	test("batch mixed explicit and implicit operations", () => {
-		const source = '{"x": 1, "y": 2, "z": 3}';
+	test("batch requires explicit operation type", () => {
+		const source = '{"x": 1, "y": 2}';
 
-		const result = batch(source, [
-			{ operation: "replace", path: "x", value: "10" },
-			{ path: "y" }, // implicit delete
-			{ path: "z", value: "30" }, // implicit replace
-		]);
+		// Should throw error for missing operation field
+		assert.throws(() => {
+			batch(source, [{ path: "x", value: "10" }]);
+		}, /Operation type is required/);
+	});
 
-		assert.equal(result, '{"x": 10, "z": 30}');
+	test("batch throws error for invalid operation type", () => {
+		const source = '{"x": 1}';
+
+		// Should throw error for invalid operation
+		assert.throws(() => {
+			batch(source, [{ operation: "update", path: "x", value: "10" }]);
+		}, /Invalid operation type/);
+	});
+
+	test("batch throws error for replace without value", () => {
+		const source = '{"x": 1}';
+
+		// Should throw error for replace without value
+		assert.throws(() => {
+			batch(source, [{ operation: "replace", path: "x" }]);
+		}, /Replace operation requires 'value' property/);
+	});
+
+	test("batch throws error for insert without value", () => {
+		const source = '{"items": [1, 2]}';
+
+		// Should throw error for insert without value
+		assert.throws(() => {
+			batch(source, [{ operation: "insert", path: "items", position: 0 }]);
+		}, /Insert operation requires 'value' property/);
 	});
 });
 
@@ -585,8 +609,8 @@ describe("Value Helpers Tests", () => {
 		const source = '{"count": 0, "items": []}';
 
 		const result = batch(source, [
-			{ path: "count", value: valueHelpers.formatValue(5) },
-			{ path: "items", position: 0, value: valueHelpers.formatValue("item1") },
+			{ operation: "replace", path: "count", value: valueHelpers.formatValue(5) },
+			{ operation: "insert", path: "items", position: 0, value: valueHelpers.formatValue("item1") },
 		]);
 
 		assert.equal(result, '{"count": 5, "items": ["item1"]}');
