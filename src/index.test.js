@@ -562,11 +562,26 @@ describe("Value Helpers Tests", () => {
 	test("number helper", () => {
 		assert.equal(valueHelpers.number(42), "42");
 		assert.equal(valueHelpers.number(3.14), "3.14");
+		assert.equal(valueHelpers.number(0), "0");
+		assert.equal(valueHelpers.number(-5), "-5");
+	});
+
+	test("number helper throws on invalid input", () => {
+		assert.throws(() => valueHelpers.number("42"), TypeError);
+		assert.throws(() => valueHelpers.number(NaN), TypeError);
+		assert.throws(() => valueHelpers.number(Infinity), TypeError);
+		assert.throws(() => valueHelpers.number(null), TypeError);
 	});
 
 	test("boolean helper", () => {
 		assert.equal(valueHelpers.boolean(true), "true");
 		assert.equal(valueHelpers.boolean(false), "false");
+	});
+
+	test("boolean helper throws on invalid input", () => {
+		assert.throws(() => valueHelpers.boolean("true"), TypeError);
+		assert.throws(() => valueHelpers.boolean(1), TypeError);
+		assert.throws(() => valueHelpers.boolean(null), TypeError);
 	});
 
 	test("nullValue helper", () => {
@@ -575,10 +590,24 @@ describe("Value Helpers Tests", () => {
 
 	test("object helper", () => {
 		assert.equal(valueHelpers.object({ key: "value" }), '{"key":"value"}');
+		assert.equal(valueHelpers.object({}), "{}");
+	});
+
+	test("object helper throws on invalid input", () => {
+		assert.throws(() => valueHelpers.object(null), TypeError);
+		assert.throws(() => valueHelpers.object([1, 2, 3]), TypeError);
+		assert.throws(() => valueHelpers.object("not an object"), TypeError);
 	});
 
 	test("array helper", () => {
 		assert.equal(valueHelpers.array([1, 2, 3]), "[1,2,3]");
+		assert.equal(valueHelpers.array([]), "[]");
+	});
+
+	test("array helper throws on invalid input", () => {
+		assert.throws(() => valueHelpers.array({ not: "array" }), TypeError);
+		assert.throws(() => valueHelpers.array("not an array"), TypeError);
+		assert.throws(() => valueHelpers.array(null), TypeError);
 	});
 
 	test("using value helpers with replace", () => {

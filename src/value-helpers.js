@@ -36,6 +36,9 @@ export function string(value) {
  * number(42) // "42"
  */
 export function number(value) {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		throw new TypeError(`Expected a finite number, got ${typeof value}: ${value}`);
+	}
 	return String(value);
 }
 
@@ -47,6 +50,9 @@ export function number(value) {
  * boolean(true) // "true"
  */
 export function boolean(value) {
+	if (typeof value !== "boolean") {
+		throw new TypeError(`Expected a boolean, got ${typeof value}: ${value}`);
+	}
 	return String(value);
 }
 
@@ -68,6 +74,9 @@ export function nullValue() {
  * object({a: 1, b: 2}) // '{"a":1,"b":2}'
  */
 export function object(value) {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new TypeError(`Expected a plain object, got ${typeof value}: ${value}`);
+	}
 	return JSON.stringify(value);
 }
 
@@ -79,5 +88,8 @@ export function object(value) {
  * array([1, 2, 3]) // '[1,2,3]'
  */
 export function array(value) {
+	if (!Array.isArray(value)) {
+		throw new TypeError(`Expected an array, got ${typeof value}: ${value}`);
+	}
 	return JSON.stringify(value);
 }
