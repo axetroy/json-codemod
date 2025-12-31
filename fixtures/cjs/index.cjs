@@ -1,3 +1,3 @@
-const jsoncst = require("jsoncst");
+const { default: jsonmod, formatValue } = require("jsoncst");
 
-console.log(jsoncst, jsoncst.replace);
+console.log(jsonmod, formatValue);

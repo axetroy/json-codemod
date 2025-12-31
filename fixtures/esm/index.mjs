@@ -1,3 +1,3 @@
-import jsoncst, { replace } from "jsoncst";
+import jsonmod, { formatValue } from "jsoncst";
 
-console.log(jsoncst, replace);
+console.log(jsonmod, formatValue);

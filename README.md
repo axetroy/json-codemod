@@ -5,13 +5,13 @@
 ![Node](https://img.shields.io/badge/node-%3E=14-blue.svg?style=flat-square)
 [![npm version](https://badge.fury.io/js/json-codemod.svg)](https://badge.fury.io/js/json-codemod)
 
-A utility to patch JSON strings while preserving the original formatting, including comments and whitespace.
+Modify JSON strings with a fluent chainable API while preserving formatting, comments, and whitespace.
 
 ## ✨ Features
 
 -   🎨 **Format Preservation** - Maintains comments, whitespace, and original formatting
--   🔄 **Precise Modifications** - Replace, delete, and insert values while leaving everything else intact
--   ⚡ **Unified Patch API** - Apply multiple operations efficiently in a single call
+-   🔗 **Chainable API** - Fluent interface for readable modifications
+-   ⚡ **Sequential Operations** - Apply multiple changes in order
 -   🚀 **Fast & Lightweight** - Zero dependencies, minimal footprint
 -   📦 **Dual module support** - Works with both ESM and CommonJS
 -   💪 **TypeScript Support** - Full type definitions included
@@ -33,639 +33,365 @@ pnpm add json-codemod
 
 ## 🚀 Quick Start
 
-### Using Patch (Recommended for Multiple Operations)
-
 ```js
-import { batch } from "json-codemod";
+import jsonmod from "json-codemod";
 
-const source = '{"name": "Alice", "age": 30, "items": [1, 2]}';
+const source = '{"name": "Alice", "age": 30, "items": [1, 2, 3]}';
 
-// Apply multiple operations at once (most efficient)
-const result = batch(source, [
-	{ path: "age", value: "31" }, // Replace
-	{ path: "name" }, // Delete (no value means delete)
-	{ path: "items", position: 2, value: "3" }, // Insert
-]);
+const result = jsonmod(source)
+  .replace("name", '"Bob"')
+  .replace("age", "31")
+  .delete("items[1]")
+  .insert("items", 2, "4")
+  .apply();
 
-console.log(result);
-// Output: {"age": 31, "items": [1, 2, 3]}
+// Result: {"name": "Bob", "age": 31, "items": [1, 4, 3]}
 ```
 
-### Replace Values
+### With Value Helpers
+
+Use `formatValue` for automatic type handling:
 
 ```js
-import { replace } from "json-codemod";
+import jsonmod, { formatValue } from "json-codemod";
 
-const source = '{"name": "Alice", "age": 30}';
+const source = '{"name": "Alice", "age": 30, "active": false}';
 
-// Replace a single value
-const result = replace(source, [{ path: "age", value: "31" }]);
+const result = jsonmod(source)
+  .replace("name", formatValue("Bob"))    // Strings quoted automatically
+  .replace("age", formatValue(31))        // Numbers handled correctly
+  .replace("active", formatValue(true))   // Booleans too
+  .apply();
 
-console.log(result);
-// Output: {"name": "Alice", "age": 31}
+// Result: {"name": "Bob", "age": 31, "active": true}
 ```
 
-### Delete Properties and Elements
+## 📖 API Reference
 
+### `jsonmod(sourceText)`
+
+Creates a chainable instance for JSON modifications.
+
+**Parameters:**
+- `sourceText` (string): JSON string to modify
+
+**Returns:** `JsonMod` instance
+
+**Example:**
 ```js
-import { remove } from "json-codemod";
-
-const source = '{"name": "Alice", "age": 30, "city": "Beijing"}';
-
-// Delete a property
-const result = remove(source, [{ path: "age" }]);
-
-console.log(result);
-// Output: {"name": "Alice", "city": "Beijing"}
+const mod = jsonmod('{"name": "Alice"}');
 ```
 
-### Insert Properties and Elements
+### `.replace(path, value)`
 
+Replace a value at the specified path.
+
+**Parameters:**
+- `path` (string | string[]): JSON path
+- `value` (string): New value as JSON string
+
+**Returns:** `this` (chainable)
+
+**Examples:**
 ```js
-import { insert } from "json-codemod";
+// Simple replacement
+jsonmod(source).replace("name", '"Bob"').apply();
 
+// Nested path
+jsonmod(source).replace("user.profile.age", "31").apply();
+
+// Array element
+jsonmod(source).replace("items[1]", "99").apply();
+
+// Using formatValue
+jsonmod(source).replace("name", formatValue("Bob")).apply();
+```
+
+### `.delete(path)` / `.remove(path)`
+
+Delete a property or array element.
+
+**Parameters:**
+- `path` (string | string[]): JSON path
+
+**Returns:** `this` (chainable)
+
+**Examples:**
+```js
+// Delete property
+jsonmod(source).delete("age").apply();
+
+// Delete array element
+jsonmod(source).delete("items[0]").apply();
+
+// Delete nested property
+jsonmod(source).delete("user.email").apply();
+
+// Multiple deletions (remove is alias)
+jsonmod(source)
+  .delete("a")
+  .remove("b")
+  .apply();
+```
+
+### `.insert(path, keyOrPosition, value)`
+
+Insert into objects or arrays.
+
+**Parameters:**
+- `path` (string | string[]): Path to container
+- `keyOrPosition` (string | number): Property name (object) or index (array)
+- `value` (string): Value as JSON string
+
+**Returns:** `this` (chainable)
+
+**Examples:**
+```js
 // Insert into object
-const source1 = '{"name": "Alice"}';
-const result1 = insert(source1, [{ path: "", key: "age", value: "30" }]);
-console.log(result1);
-// Output: {"name": "Alice", "age": 30}
+jsonmod(source)
+  .insert("", "email", '"test@example.com"')
+  .apply();
 
-// Insert into array
-const source2 = '{"numbers": [1, 3, 4]}';
-const result2 = insert(source2, [{ path: "numbers", position: 1, value: "2" }]);
-console.log(result2);
-// Output: {"numbers": [1, 2, 3, 4]}
+// Insert into array at position
+jsonmod(source)
+  .insert("items", 0, '"first"')
+  .apply();
+
+// Append to array
+jsonmod(source)
+  .insert("items", 3, '"last"')
+  .apply();
+
+// Using formatValue
+jsonmod(source)
+  .insert("user", "age", formatValue(30))
+  .apply();
 ```
 
-### Preserving Format and Comments
+### `.apply()`
+
+Execute all queued operations and return modified JSON.
+
+**Returns:** Modified JSON string
+
+**Example:**
+```js
+const result = jsonmod(source)
+  .replace("a", "1")
+  .delete("b")
+  .insert("", "c", "3")
+  .apply();  // Execute and return result
+```
+
+### `formatValue(value)`
+
+Convert JavaScript values to JSON strings automatically.
+
+**Parameters:**
+- `value` (any): JavaScript value
+
+**Returns:** JSON string representation
+
+**Examples:**
+```js
+import { formatValue } from "json-codemod";
+
+formatValue(42)          // "42"
+formatValue("hello")     // '"hello"'
+formatValue(true)        // "true"
+formatValue(null)        // "null"
+formatValue({a: 1})      // '{"a":1}'
+formatValue([1, 2, 3])   // '[1,2,3]'
+```
+
+## 🎯 Examples
+
+### Configuration File Updates
+
+```js
+import jsonmod, { formatValue } from "json-codemod";
+import { readFileSync, writeFileSync } from "fs";
+
+const config = readFileSync("tsconfig.json", "utf-8");
+
+const updated = jsonmod(config)
+  .replace("compilerOptions.target", formatValue("ES2022"))
+  .replace("compilerOptions.strict", formatValue(true))
+  .delete("compilerOptions.experimentalDecorators")
+  .insert("compilerOptions", "moduleResolution", formatValue("bundler"))
+  .apply();
+
+writeFileSync("tsconfig.json", updated);
+```
+
+### Preserving Comments and Formatting
 
 ```js
 const source = `{
-  // User information
+  // User configuration
   "name": "Alice",
-  "age": 30, /* years old */
-  "city": "Beijing"
+  "age": 30, /* years */
+  "active": true
 }`;
 
-const result = replace(source, [{ path: "age", value: "31" }]);
+const result = jsonmod(source)
+  .replace("age", "31")
+  .replace("active", "false")
+  .apply();
 
-console.log(result);
-// Output: {
-//   // User information
-//   "name": "Alice",
-//   "age": 31, /* years old */
-//   "city": "Beijing"
-// }
+// Comments and formatting preserved!
 ```
 
-## 📖 Usage Examples
-
-### Replace Operations
-
-#### Modifying Nested Objects
+### Complex Nested Operations
 
 ```js
-const source = '{"user": {"name": "Alice", "profile": {"age": 30}}}';
+const data = '{"user": {"name": "Alice", "settings": {"theme": "dark"}}}';
 
-const result = replace(source, [{ path: "user.profile.age", value: "31" }]);
-
-// Result: {"user": {"name": "Alice", "profile": {"age": 31}}}
+const result = jsonmod(data)
+  .replace("user.name", formatValue("Bob"))
+  .replace("user.settings.theme", formatValue("light"))
+  .insert("user.settings", "language", formatValue("en"))
+  .apply();
 ```
 
-#### Modifying Array Elements
-
-```js
-const source = '{"scores": [85, 90, 95]}';
-
-const result = replace(source, [{ path: "scores[1]", value: "92" }]);
-
-// Result: {"scores": [85, 92, 95]}
-```
-
-#### Using JSON Pointer
-
-```js
-const source = '{"data": {"items": [1, 2, 3]}}';
-
-const result = replace(source, [{ path: "/data/items/2", value: "99" }]);
-
-// Result: {"data": {"items": [1, 2, 99]}}
-```
-
-#### Batch Modifications
-
-```js
-const source = '{"x": 1, "y": 2, "arr": [3, 4]}';
-
-const result = replace(source, [
-	{ path: "x", value: "10" },
-	{ path: "y", value: "20" },
-	{ path: "arr[0]", value: "30" },
-]);
-
-// Result: {"x": 10, "y": 20, "arr": [30, 4]}
-```
-
-#### Modifying String Values
-
-```js
-const source = '{"message": "Hello"}';
-
-const result = replace(source, [{ path: "message", value: '"World"' }]);
-
-// Result: {"message": "World"}
-// Note: value needs to include quotes for strings
-```
-
-### Delete Operations
-
-#### Deleting Object Properties
-
-```js
-import { remove } from "json-codemod";
-
-const source = '{"name": "Alice", "age": 30, "city": "Beijing"}';
-
-// Delete a single property
-const result = remove(source, [{ path: "age" }]);
-
-// Result: {"name": "Alice", "city": "Beijing"}
-```
-
-#### Deleting Array Elements
+### Array Manipulations
 
 ```js
 const source = '{"items": [1, 2, 3, 4, 5]}';
 
-// Delete an element by index
-const result = remove(source, [{ path: "items[2]" }]);
+const result = jsonmod(source)
+  .delete("items[1]")      // Remove second item
+  .delete("items[2]")      // Remove what is now third item
+  .insert("items", 0, "0") // Insert at beginning
+  .apply();
 
-// Result: {"items": [1, 2, 4, 5]}
+// Result: {"items": [0, 1, 4, 5]}
 ```
 
-#### Deleting Nested Properties
+### Conditional Operations
 
 ```js
-const source = '{"user": {"name": "Alice", "age": 30, "email": "alice@example.com"}}';
+let mod = jsonmod(config);
 
-const result = remove(source, [{ path: "user.email" }]);
-
-// Result: {"user": {"name": "Alice", "age": 30}}
-```
-
-#### Batch Deletions
-
-```js
-const source = '{"a": 1, "b": 2, "c": 3, "d": 4}';
-
-const result = remove(source, [{ path: "b" }, { path: "d" }]);
-
-// Result: {"a": 1, "c": 3}
-```
-
-### Insert Operations
-
-#### Inserting into Objects
-
-```js
-import { insert } from "json-codemod";
-
-const source = '{"name": "Alice"}';
-
-// Insert a new property (key is required for objects)
-const result = insert(source, [{ path: "", key: "age", value: "30" }]);
-
-// Result: {"name": "Alice", "age": 30}
-```
-
-#### Inserting into Arrays
-
-```js
-const source = '{"numbers": [1, 2, 4, 5]}';
-
-// Insert at specific position
-const result = insert(source, [{ path: "numbers", position: 2, value: "3" }]);
-
-// Result: {"numbers": [1, 2, 3, 4, 5]}
-```
-
-#### Inserting at Array Start
-
-```js
-const source = '{"list": [2, 3, 4]}';
-
-const result = insert(source, [{ path: "list", position: 0, value: "1" }]);
-
-// Result: {"list": [1, 2, 3, 4]}
-```
-
-#### Appending to Array
-
-```js
-const source = '{"list": [1, 2, 3]}';
-
-// Omit position to append at the end
-const result = insert(source, [{ path: "list", value: "4" }]);
-
-// Result: {"list": [1, 2, 3, 4]}
-```
-
-#### Inserting into Nested Structures
-
-```js
-const source = '{"data": {"items": [1, 2]}}';
-
-// Insert into nested array
-const result = insert(source, [{ path: "data.items", position: 1, value: "99" }]);
-
-// Result: {"data": {"items": [1, 99, 2]}}
-```
-
-### Modifying Complex Values
-
-```js
-const source = '{"config": {"timeout": 3000}}';
-
-// Replace with an object
-const result1 = replace(source, [{ path: "config", value: '{"timeout": 5000, "retry": 3}' }]);
-
-// Replace with an array
-const result2 = replace(source, [{ path: "config", value: "[1, 2, 3]" }]);
-```
-
-### Handling Special Characters in Keys
-
-Use JSON Pointer to handle keys with special characters:
-
-```js
-const source = '{"a/b": {"c~d": 5}}';
-
-// In JSON Pointer:
-// ~0 represents ~
-// ~1 represents /
-const result = replace(source, [{ path: "/a~1b/c~0d", value: "42" }]);
-
-// Result: {"a/b": {"c~d": 42}}
-```
-
-## 📚 API Documentation
-
-### `batch(sourceText, patches)` ⭐ Recommended
-
-Applies multiple operations (replace, delete, insert) in a single call. This is the most efficient way to apply multiple changes as it only parses the source once.
-
-#### Parameters
-
--   **sourceText** (`string`): The original JSON string
--   **patches** (`Array<ReplacePatch | DeletePatch | InsertPatch>`): Array of mixed operations to apply
-
-#### Batch Types
-
-The function automatically detects the operation type based on the batch properties:
-
-```typescript
-// Replace: has value but no key/position
-{ path: string, value: string }
-
-// Delete: no value, key, or position
-{ path: string }
-
-// Insert (object): has key and value
-{ path: string, key: string, value: string }
-
-// Insert (array): has position and value
-{ path: string, position: number, value: string }
-```
-
-#### Return Value
-
-Returns the modified JSON string with all patches applied.
-
-#### Example
-
-```js
-const result = batch('{"a": 1, "b": 2, "items": [1, 2]}', [
-	{ path: "a", value: "10" }, // Replace
-	{ path: "b" }, // Delete
-	{ path: "items", position: 2, value: "3" }, // Insert
-]);
-// Returns: '{"a": 10, "items": [1, 2, 3]}'
-```
-
----
-
-### `replace(sourceText, patches)`
-
-Modifies values in a JSON string.
-
-#### Parameters
-
--   **sourceText** (`string`): The original JSON string
--   **patches** (`Array<Patch>`): Array of modifications to apply
-
-#### Patch Object
-
-```typescript
-interface ReplacePatch {
-	/**
-	 * A JSON path where the replacement should occur.
-	 */
-	path: string;
-	/**
-	 * The value to insert at the specified path.
-	 */
-	value: string;
+if (isDevelopment) {
+  mod = mod.replace("debug", "true");
 }
-```
 
-#### Return Value
-
-Returns the modified JSON string.
-
-#### Error Handling
-
--   If a path doesn't exist, that modification is silently ignored without throwing an error
--   If multiple modifications have conflicting (overlapping) paths, an error is thrown
-
----
-
-### `remove(sourceText, patches)`
-
-Deletes properties from objects or elements from arrays in a JSON string.
-
-#### Parameters
-
--   **sourceText** (`string`): The original JSON string
--   **patches** (`Array<DeletePatch>`): Array of deletions to apply
-
-#### DeletePatch Object
-
-```typescript
-interface DeletePatch {
-	/**
-	 * A JSON path to delete.
-	 */
-	path: string;
+if (needsUpdate) {
+  mod = mod.replace("version", formatValue("2.0.0"));
 }
+
+const result = mod.apply();
 ```
 
-#### Return Value
+## 📚 Path Syntax
 
-Returns the modified JSON string with specified paths removed.
-
-#### Error Handling
-
--   If a path doesn't exist, the deletion is silently ignored
--   Whitespace and commas are automatically handled to maintain valid JSON
-
----
-
-### `insert(sourceText, patches)`
-
-Inserts new properties into objects or elements into arrays in a JSON string.
-
-#### Parameters
-
--   **sourceText** (`string`): The original JSON string
--   **patches** (`Array<InsertPatch>`): Array of insertions to apply
-
-#### InsertPatch Object
-
-```typescript
-interface InsertPatch {
-	/**
-	 * A JSON path where the insertion should occur.
-	 * For arrays: the path should point to the array, and position specifies the index.
-	 * For objects: the path should point to the object, and key specifies the property name.
-	 */
-	path: string;
-	/**
-	 * The value to insert.
-	 */
-	value: string;
-	/**
-	 * For array insertion: the index where to insert the value.
-	 * If omitted, the value is appended to the end.
-	 */
-	position?: number;
-	/**
-	 * For object insertion: the key name for the new property.
-	 * Required when inserting into objects.
-	 */
-	key?: string;
-}
-```
-
-#### Return Value
-
-Returns the modified JSON string with new values inserted.
-
-#### Error Handling
-
--   For object insertions, `key` is required
--   For object insertions, if the key already exists, an error is thrown
--   For array insertions, position must be within valid bounds (0 to array.length)
-
----
-
-### Path Syntax
-
-Two path syntaxes are supported for all operations:
-
-1. **Dot Notation** (recommended for simple cases)
-
-    - Object properties: `"user.name"`
-    - Array indices: `"items[0]"`
-    - Nested paths: `"data.users[0].name"`
-
-2. **JSON Pointer** (RFC 6901)
-    - Format: starts with `/`
-    - Object properties: `"/user/name"`
-    - Array indices: `"/items/0"`
-    - Escape sequences:
-        - `~0` represents `~`
-        - `~1` represents `/`
-    - Example: `"/a~1b/c~0d"` refers to the `c~d` property of the `a/b` object
-
-### Value Format
-
-The `value` parameter must be a string representation of a JSON value:
-
--   Numbers: `"42"`, `"3.14"`
--   Strings: `'"hello"'` (must include quotes)
--   Booleans: `"true"`, `"false"`
--   null: `"null"`
--   Objects: `'{"key": "value"}'`
--   Arrays: `'[1, 2, 3]'`
-
-## 🎯 Use Cases
-
-### Configuration File Modification
-
-Perfect for modifying configuration files with comments (like `tsconfig.json`, `package.json`, etc.):
+### Dot Notation
 
 ```js
-import { readFileSync, writeFileSync } from "fs";
-import { replace, remove, insert } from "json-codemod";
-
-// Read configuration file
-const config = readFileSync("tsconfig.json", "utf-8");
-
-// Modify configuration
-const updated = replace(config, [
-	{ path: "compilerOptions.target", value: '"ES2020"' },
-	{ path: "compilerOptions.strict", value: "true" },
-]);
-
-// Save configuration (preserving original format and comments)
-writeFileSync("tsconfig.json", updated);
+jsonmod(source).replace("user.profile.name", '"Bob"').apply();
 ```
 
-### Managing Dependencies
+### Bracket Notation for Arrays
 
 ```js
-import { readFileSync, writeFileSync } from "fs";
-import { insert, remove } from "json-codemod";
-
-const pkg = readFileSync("package.json", "utf-8");
-
-// Add a new dependency
-const withNewDep = insert(pkg, [{ path: "dependencies", key: "lodash", value: '"^4.17.21"' }]);
-
-// Remove a dependency
-const cleaned = remove(pkg, [{ path: "dependencies.old-package" }]);
-
-writeFileSync("package.json", cleaned);
+jsonmod(source).replace("items[0]", "1").apply();
+jsonmod(source).delete("items[2]").apply();
 ```
 
-### JSON Data Transformation
+### JSON Pointer
 
 ```js
-// Batch update JSON data
-const data = fetchDataAsString();
-
-const updated = replace(data, [
-	{ path: "metadata.version", value: '"2.0"' },
-	{ path: "metadata.updatedAt", value: `"${new Date().toISOString()}"` },
-]);
+jsonmod(source).replace("/user/profile/name", '"Bob"').apply();
 ```
 
-### Array Manipulation
+### Special Characters
+
+For keys with special characters, use JSON Pointer:
 
 ```js
-import { insert, remove } from "json-codemod";
+// Key with slash: "a/b"
+jsonmod(source).replace("/a~1b", "value").apply();
 
-const data = '{"tasks": ["task1", "task2", "task4"]}';
-
-// Insert a task in the middle
-const withTask = insert(data, [{ path: "tasks", position: 2, value: '"task3"' }]);
-
-// Remove a completed task
-const updated = remove(withTask, [{ path: "tasks[0]" }]);
-```
-
-### Automation Scripts
-
-```js
-// Automated version number updates
-const pkg = readFileSync("package.json", "utf-8");
-const version = "1.2.3";
-
-const updated = replace(pkg, [{ path: "version", value: `"${version}"` }]);
-
-writeFileSync("package.json", updated);
+// Key with tilde: "a~b"
+jsonmod(source).replace("/a~0b", "value").apply();
 ```
 
 ## 💻 TypeScript Support
 
-The package includes full TypeScript type definitions:
+Full TypeScript support with type definitions:
 
 ```typescript
-import { replace, remove, insert, Patch, DeletePatch, InsertPatch } from "json-codemod";
+import jsonmod, { JsonMod, formatValue } from "json-codemod";
 
-const source: string = '{"count": 0}';
+const source = '{"name": "Alice", "age": 30}';
 
-// Replace
-const patches: Patch[] = [{ path: "count", value: "1" }];
-const result: string = replace(source, patches);
+const instance: JsonMod = jsonmod(source);
 
-// Delete
-const deletePatches: DeletePatch[] = [{ path: "count" }];
-const deleted: string = remove(source, deletePatches);
-
-// Insert
-const insertPatches: InsertPatch[] = [{ path: "", key: "name", value: '"example"' }];
-const inserted: string = insert(source, insertPatches);
+const result: string = instance
+  .replace("name", formatValue("Bob"))
+  .delete("age")
+  .apply();
 ```
 
 ## 🔧 How It Works
 
-json-codemod uses Concrete Syntax Tree (CST) technology:
-
-1. **Tokenization** (Tokenizer): Breaks down the JSON string into tokens, including values, whitespace, and comments
-2. **Parsing** (CSTBuilder): Builds a syntax tree that preserves all formatting information
-3. **Path Resolution** (PathResolver): Locates the node to modify based on the path
-4. **Precise Replacement**: Replaces only the target value, preserving everything else
-
-This approach ensures that everything except the modified values (including whitespace, comments, and formatting) remains unchanged.
+1. **Parse:** Creates a Concrete Syntax Tree (CST) preserving all formatting
+2. **Queue:** Operations are queued, not executed immediately
+3. **Execute:** `.apply()` runs operations sequentially, re-parsing after each
+4. **Return:** Returns the modified JSON string with formatting preserved
 
 ## ❓ FAQ
 
-### Q: Why does the value parameter need to be a string?
+### Why use formatValue?
 
-A: For flexibility and precision. You have complete control over the output format, including quotes, spacing, etc.
-
+**Without formatValue:**
 ```js
-// Numbers don't need quotes
-replace(source, [{ path: "age", value: "30" }]);
-
-// Strings need quotes
-replace(source, [{ path: "name", value: '"Alice"' }]);
-
-// You can control formatting
-replace(source, [{ path: "data", value: '{\n  "key": "value"\n}' }]);
+.replace("name", '"Bob"')    // Must remember quotes
+.replace("age", "30")         // No quotes for numbers
+.replace("active", "true")    // No quotes for booleans
 ```
 
-### Q: How are non-existent paths handled?
+**With formatValue:**
+```js
+.replace("name", formatValue("Bob"))    // Automatic
+.replace("age", formatValue(30))        // Automatic
+.replace("active", formatValue(true))   // Automatic
+```
 
-A: If a path doesn't exist, that modification is automatically ignored without throwing an error. The original string remains unchanged.
+### How are comments preserved?
 
-### Q: What JSON extensions are supported?
+The library parses JSON into a Concrete Syntax Tree that includes comments and whitespace as tokens. Modifications only change value tokens, leaving everything else intact.
 
-A: Supported:
+### What about performance?
 
--   ✅ Single-line comments `//`
--   ✅ Block comments `/* */`
--   ✅ All standard JSON syntax
+Operations are applied sequentially with re-parsing between each. This ensures correctness but means:
+- Fast for small to medium JSON files
+- For large files with many operations, consider batching similar changes
 
-Not supported:
+### Can I reuse a JsonMod instance?
 
--   ❌ Other JSON5 features (like unquoted keys, trailing commas, etc.)
+No, call `.apply()` returns a string and operations are cleared. Create a new instance for new modifications:
 
-### Q: How is the performance?
-
-A: json-codemod is specifically designed for precise modifications with excellent performance. For large files (hundreds of KB), parsing and modification typically complete in milliseconds.
+```js
+const result1 = jsonmod(source).replace("a", "1").apply();
+const result2 = jsonmod(result1).replace("b", "2").apply();
+```
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you'd like to contribute to the project:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the [Anti 996 License](LICENSE).
+[Anti 996 License](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
 ## 🔗 Links
 
--   [npm package](https://www.npmjs.com/package/json-codemod)
--   [GitHub repository](https://github.com/axetroy/json-codemod)
--   [Issue tracker](https://github.com/axetroy/json-codemod/issues)
+-   [GitHub](https://github.com/axetroy/json-codemod)
+-   [npm](https://www.npmjs.com/package/json-codemod)
+-   [API Documentation](./CHAINABLE_API.md)
 
 ## 🌟 Star History
 
-If this project helps you, please give it a ⭐️!
+[![Star History Chart](https://api.star-history.com/svg?repos=axetroy/json-codemod&type=Date)](https://star-history.com/#axetroy/json-codemod&Date)

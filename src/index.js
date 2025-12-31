@@ -1,15 +1,9 @@
-import { replace } from "./function/replace.js";
-import { remove } from "./function/delete.js";
-import { insert } from "./function/insert.js";
-import { batch } from "./function/batch.js";
+import { formatValue } from "./value-helpers.js";
+import { jsonmod, JsonMod } from "./JsonMod.js";
 
-const jsoncst = {
-	replace: replace,
-	remove: remove,
-	insert: insert,
-	batch: batch,
-};
+// Export new chainable API as default
+export default jsonmod;
 
-export { replace, remove, insert, batch };
+// Export new API and helper
+export { jsonmod, JsonMod, formatValue };
 
-export default jsoncst;
