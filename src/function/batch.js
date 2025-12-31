@@ -17,19 +17,38 @@ export function batch(sourceText, patches) {
 	const insertPatches = [];
 
 	for (const p of patches) {
-		// Determine patch type based on properties
-		if (p.value !== undefined && p.key === undefined && p.position === undefined) {
-			// Has value but no key/position -> replace operation
-			replacePatches.push({ path: p.path, value: p.value });
-		} else if (p.value === undefined && p.key === undefined && p.position === undefined) {
-			// No value, key, or position -> delete operation
-			deletePatches.push({ path: p.path });
-		} else if ((p.key !== undefined || p.position !== undefined) && p.value !== undefined) {
-			// Has key or position with value -> insert operation
-			insertPatches.push(p);
+		// Support explicit operation type for clarity
+		if (p.operation) {
+			switch (p.operation) {
+				case "replace":
+					replacePatches.push({ path: p.path, value: p.value });
+					break;
+				case "delete":
+				case "remove":
+					deletePatches.push({ path: p.path });
+					break;
+				case "insert":
+					insertPatches.push(p);
+					break;
+				default:
+					// Invalid operation - skip it
+					continue;
+			}
 		} else {
-			// Invalid patch - skip it
-			continue;
+			// Determine patch type based on properties (backward compatibility)
+			if (p.value !== undefined && p.key === undefined && p.position === undefined) {
+				// Has value but no key/position -> replace operation
+				replacePatches.push({ path: p.path, value: p.value });
+			} else if (p.value === undefined && p.key === undefined && p.position === undefined) {
+				// No value, key, or position -> delete operation
+				deletePatches.push({ path: p.path });
+			} else if ((p.key !== undefined || p.position !== undefined) && p.value !== undefined) {
+				// Has key or position with value -> insert operation
+				insertPatches.push(p);
+			} else {
+				// Invalid patch - skip it
+				continue;
+			}
 		}
 	}
 

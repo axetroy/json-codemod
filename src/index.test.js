@@ -468,4 +468,127 @@ describe("Batch Operation Tests", () => {
 		assert(result.includes('"age": 31'));
 		assert(result.includes('"email": "alice@example.com"'));
 	});
+
+	test("batch with explicit operation types", () => {
+		const source = '{"a": 1, "b": 2, "items": [1, 2]}';
+
+		const result = batch(source, [
+			{ operation: "replace", path: "a", value: "10" },
+			{ operation: "delete", path: "b" },
+			{ operation: "insert", path: "items", position: 2, value: "3" },
+		]);
+
+		assert.equal(result, '{"a": 10, "items": [1, 2, 3]}');
+	});
+
+	test("batch with explicit operation 'remove' alias", () => {
+		const source = '{"a": 1, "b": 2}';
+
+		const result = batch(source, [{ operation: "remove", path: "b" }]);
+
+		assert.equal(result, '{"a": 1}');
+	});
+
+	test("batch mixed explicit and implicit operations", () => {
+		const source = '{"x": 1, "y": 2, "z": 3}';
+
+		const result = batch(source, [
+			{ operation: "replace", path: "x", value: "10" },
+			{ path: "y" }, // implicit delete
+			{ path: "z", value: "30" }, // implicit replace
+		]);
+
+		assert.equal(result, '{"x": 10, "z": 30}');
+	});
+});
+
+// ===== VALUE HELPERS TESTS =====
+import * as valueHelpers from "./value-helpers.js";
+
+describe("Value Helpers Tests", () => {
+	test("formatValue with number", () => {
+		assert.equal(valueHelpers.formatValue(42), "42");
+	});
+
+	test("formatValue with string", () => {
+		assert.equal(valueHelpers.formatValue("hello"), '"hello"');
+	});
+
+	test("formatValue with boolean", () => {
+		assert.equal(valueHelpers.formatValue(true), "true");
+		assert.equal(valueHelpers.formatValue(false), "false");
+	});
+
+	test("formatValue with null", () => {
+		assert.equal(valueHelpers.formatValue(null), "null");
+	});
+
+	test("formatValue with object", () => {
+		assert.equal(valueHelpers.formatValue({ a: 1, b: 2 }), '{"a":1,"b":2}');
+	});
+
+	test("formatValue with array", () => {
+		assert.equal(valueHelpers.formatValue([1, 2, 3]), "[1,2,3]");
+	});
+
+	test("string helper", () => {
+		assert.equal(valueHelpers.string("hello"), '"hello"');
+	});
+
+	test("number helper", () => {
+		assert.equal(valueHelpers.number(42), "42");
+		assert.equal(valueHelpers.number(3.14), "3.14");
+	});
+
+	test("boolean helper", () => {
+		assert.equal(valueHelpers.boolean(true), "true");
+		assert.equal(valueHelpers.boolean(false), "false");
+	});
+
+	test("nullValue helper", () => {
+		assert.equal(valueHelpers.nullValue(), "null");
+	});
+
+	test("object helper", () => {
+		assert.equal(valueHelpers.object({ key: "value" }), '{"key":"value"}');
+	});
+
+	test("array helper", () => {
+		assert.equal(valueHelpers.array([1, 2, 3]), "[1,2,3]");
+	});
+
+	test("using value helpers with replace", () => {
+		const source = '{"name": "Alice", "age": 30, "active": false}';
+
+		const result = replace(source, [
+			{ path: "name", value: valueHelpers.formatValue("Bob") },
+			{ path: "age", value: valueHelpers.formatValue(31) },
+			{ path: "active", value: valueHelpers.formatValue(true) },
+		]);
+
+		assert.equal(result, '{"name": "Bob", "age": 31, "active": true}');
+	});
+
+	test("using value helpers with insert", () => {
+		const source = '{"user": {}}';
+
+		// Need to do separate calls for multiple inserts to ensure proper order
+		let result = insert(source, [
+			{ path: "user", key: "email", value: valueHelpers.formatValue("test@example.com") },
+		]);
+		result = insert(result, [{ path: "user", key: "verified", value: valueHelpers.formatValue(true) }]);
+
+		assert.equal(result, '{"user": {"email": "test@example.com", "verified": true}}');
+	});
+
+	test("using value helpers with batch", () => {
+		const source = '{"count": 0, "items": []}';
+
+		const result = batch(source, [
+			{ path: "count", value: valueHelpers.formatValue(5) },
+			{ path: "items", position: 0, value: valueHelpers.formatValue("item1") },
+		]);
+
+		assert.equal(result, '{"count": 5, "items": ["item1"]}');
+	});
 });
