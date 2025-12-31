@@ -73,7 +73,7 @@ export function object(value) {
 
 /**
  * Formats an array value for use in patches.
- * @param {array} value - The array value
+ * @param {any[]} value - The array value
  * @returns {string} - The JSON stringified array
  * @example
  * array([1, 2, 3]) // '[1,2,3]'
